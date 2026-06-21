@@ -56,6 +56,10 @@ st.markdown("""
     .stApp label {
         color: #0F172A !important;
     }
+    /* Ensure all button text paragraphs inherit color from their parent button container */
+    .stApp button p {
+        color: inherit !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
