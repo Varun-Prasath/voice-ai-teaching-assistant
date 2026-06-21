@@ -1,6 +1,7 @@
 import streamlit as st
 from core.stt import transcribe_audio
 from core.llm import explain_concept
+from core.tts import synthesize_speech
 
 def render_concept_view():
     st.markdown('<div style="font-size: 26px; font-weight: bold; color: #1E3A8A; margin-bottom: 10px;">📝 Ask a Concept Question</div>', unsafe_allow_html=True)
@@ -11,6 +12,8 @@ def render_concept_view():
         st.session_state.concept_transcript = ""
     if "concept_explanation" not in st.session_state:
         st.session_state.concept_explanation = None
+    if "concept_audio_bytes" not in st.session_state:
+        st.session_state.concept_audio_bytes = None
     if "last_active_audio" not in st.session_state:
         st.session_state.last_active_audio = None
 
@@ -26,16 +29,17 @@ def render_concept_view():
     if active_audio != st.session_state.last_active_audio:
         st.session_state.concept_transcript = ""
         st.session_state.concept_explanation = None
+        st.session_state.concept_audio_bytes = None
         st.session_state.last_active_audio = active_audio
         st.rerun()
 
     if active_audio is not None:
         st.info("Audio source detected. Click below to simplify the concept.")
         
-        # Trigger button (Stage 1: STT)
+        # Stage 1: STT Transcription
         if not st.session_state.concept_transcript:
             if st.button("Simplify Concept", key="simplify_concept_btn"):
-                with st.spinner("Step 1/2: Listening to audio (STT)..."):
+                with st.spinner("Step 1/3: Listening to audio (STT)..."):
                     try:
                         st.session_state.concept_transcript = transcribe_audio(active_audio)
                         st.rerun()
@@ -43,19 +47,31 @@ def render_concept_view():
                         st.error(f"Failed to transcribe: {str(e)}")
                         return
 
-        # Stage 2: LLM (Automatic trigger after Stage 1 finishes)
+        # Stage 2: Gemini Explanation (automatic trigger after Stage 1)
         if st.session_state.concept_transcript and not st.session_state.concept_explanation:
-            with st.spinner("Step 2/2: Simplifying concept with Gemini LLM..."):
+            with st.spinner("Step 2/3: Simplifying concept with Gemini LLM..."):
                 try:
                     st.session_state.concept_explanation = explain_concept(st.session_state.concept_transcript)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Gemini LLM Error: {str(e)}")
-                    # Allow user to retry LLM if it fails by clearing transcript
                     st.session_state.concept_transcript = ""
                     return
 
-    # Render transcript immediately
+        # Stage 3: TTS Synthesis (automatic trigger after Stage 2)
+        if st.session_state.concept_explanation and not st.session_state.concept_audio_bytes:
+            with st.spinner("Step 3/3: Generating voice explanation (TTS)..."):
+                try:
+                    explanation_text = st.session_state.concept_explanation.get("explanation", "")
+                    st.session_state.concept_audio_bytes = synthesize_speech(explanation_text)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Voice Synthesis Error: {str(e)}")
+                    # Do not block UI display of card if TTS fails, just flag as empty bytes
+                    st.session_state.concept_audio_bytes = b""
+                    st.rerun()
+
+    # Render Transcript immediately
     if st.session_state.concept_transcript:
         st.markdown("### 🎙️ Detected Transcript:")
         st.markdown(
@@ -88,6 +104,11 @@ def render_concept_view():
 </div>
 </div>"""
         st.markdown(html_content, unsafe_allow_html=True)
+
+        # Audio Playback Control
+        if st.session_state.concept_audio_bytes:
+            st.markdown("### 🔊 Audio Co-Pilot Voice:")
+            st.audio(st.session_state.concept_audio_bytes, format="audio/mp3", autoplay=True)
 
         # Diagram Section
         if diagram_hint:
