@@ -1,5 +1,6 @@
 streamlit
 openai
-anthropic
+google-genai
 gtts
 python-dotenv
+groq
