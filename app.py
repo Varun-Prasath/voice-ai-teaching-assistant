@@ -49,6 +49,13 @@ st.markdown("""
         background-color: #1E3A8A !important;
         color: white !important;
     }
+    /* Force high contrast dark text for base text labels and markdown paragraphs */
+    div[data-testid="stWidgetLabel"] p, 
+    div[data-testid="stMarkdownContainer"] p, 
+    div[data-testid="stText"] p,
+    .stApp label {
+        color: #0F172A !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
