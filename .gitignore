@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.wav
+*.mp3
+.streamlit/config.toml
+.streamlit/secrets.toml
+venv/
+.venv/
+.idea/
+.vscode/
