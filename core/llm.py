@@ -17,7 +17,7 @@ class ConceptExplanation(BaseModel):
 
 class QuizQuestion(BaseModel):
     question: str = Field(description="A clear Hinglish question suitable for classroom display (max 15 words).")
-    options: List[str] = Field(description="List of exactly 4 option choices in Hinglish.")
+    options: List[str] = Field(description="List of exactly 4 option choices. Each option MUST be in Hinglish with its English translation in parentheses (e.g. 'Dharti (Earth)').")
     correct_index: int = Field(description="0-indexed integer (0-3) indicating the correct option (0 for A, 1 for B, 2 for C, 3 for D).")
 
 class Quiz(BaseModel):

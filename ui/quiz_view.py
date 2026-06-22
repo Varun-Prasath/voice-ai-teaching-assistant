@@ -9,7 +9,7 @@ def render_quiz_view():
     st.markdown("""
     <style>
         /* Base button overrides for options to make them large color cards */
-        .opt-container button {
+        div[data-testid="column"] button {
             width: 100% !important;
             min-height: 110px !important;
             font-size: 24px !important;
@@ -28,21 +28,13 @@ def render_quiz_view():
             text-align: center !important;
         }
         
-        /* Option letter styling */
-        .opt-letter {
-            font-size: 32px !important;
-            font-weight: 800 !important;
-            margin-right: 15px !important;
-            opacity: 0.9 !important;
-        }
-
-        /* Default option card background colors */
-        .opt-a button { background-color: #2563EB !important; } /* Strong Blue */
-        .opt-b button { background-color: #4F46E5 !important; } /* Indigo */
-        .opt-c button { background-color: #0F766E !important; } /* Teal */
-        .opt-d button { background-color: #D97706 !important; } /* Amber */
+        /* Default option card background colors using column-specific indexing */
+        div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(1) button { background-color: #2563EB !important; } /* Blue */
+        div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(1) button { background-color: #4F46E5 !important; } /* Indigo */
+        div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(2) button { background-color: #0F766E !important; } /* Teal */
+        div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(2) button { background-color: #D97706 !important; } /* Amber */
         
-        .opt-container button:hover {
+        div[data-testid="column"] button:hover {
             transform: scale(1.02) !important;
             box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
             opacity: 0.95 !important;
@@ -188,44 +180,40 @@ def render_quiz_view():
 
         # Dynamic CSS Injection to highlight option button states (Green/Red feedback)
         if st.session_state.quiz_answered:
-            letters = ['a', 'b', 'c', 'd']
-            correct_letter = letters[correct_index]
-            selected_letter = letters[st.session_state.quiz_selected_idx] if st.session_state.quiz_selected_idx is not None else None
+            selectors = [
+                'div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(1) button', # A
+                'div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(1) button', # B
+                'div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(2) button', # C
+                'div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(2) button'  # D
+            ]
+            
+            correct_selector = selectors[correct_index]
+            selected_selector = selectors[st.session_state.quiz_selected_idx] if st.session_state.quiz_selected_idx is not None else None
             
             style_overrides = "<style>"
-            # Fade all buttons by default
-            style_overrides += ".opt-container button { opacity: 0.3 !important; pointer-events: none !important; }"
-            # Highlight correct answer (Green)
-            style_overrides += f".opt-{correct_letter} button {{ background-color: #10B981 !important; border: 4px solid #064E3B !important; opacity: 1.0 !important; }}"
-            # If wrong answer selected, highlight it (Red)
-            if selected_letter and selected_letter != correct_letter:
-                style_overrides += f".opt-{selected_letter} button {{ background-color: #EF4444 !important; border: 4px solid #7F1D1D !important; opacity: 1.0 !important; }}"
+            # Fade all column buttons
+            style_overrides += "div[data-testid=\"column\"] button { opacity: 0.3 !important; pointer-events: none !important; }"
+            # Highlight correct option
+            style_overrides += f"{correct_selector} {{ background-color: #10B981 !important; border: 4px solid #064E3B !important; opacity: 1.0 !important; }}"
+            # If incorrect selection, highlight selected option
+            if selected_selector and selected_selector != correct_selector:
+                style_overrides += f"{selected_selector} {{ background-color: #EF4444 !important; border: 4px solid #7F1D1D !important; opacity: 1.0 !important; }}"
             style_overrides += "</style>"
             st.markdown(style_overrides, unsafe_allow_html=True)
 
         # Grid view layout (2x2 columns)
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<div class="opt-container opt-a">', unsafe_allow_html=True)
             if st.button(options[0], key="quiz_btn_a"):
                 select_option(0, correct_index)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="opt-container opt-c">', unsafe_allow_html=True)
             if st.button(options[2], key="quiz_btn_c"):
                 select_option(2, correct_index)
-            st.markdown('</div>', unsafe_allow_html=True)
 
         with col2:
-            st.markdown('<div class="opt-container opt-b">', unsafe_allow_html=True)
             if st.button(options[1], key="quiz_btn_b"):
                 select_option(1, correct_index)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="opt-container opt-d">', unsafe_allow_html=True)
             if st.button(options[3], key="quiz_btn_d"):
                 select_option(3, correct_index)
-            st.markdown('</div>', unsafe_allow_html=True)
 
         # After question answered state
         if st.session_state.quiz_answered:
