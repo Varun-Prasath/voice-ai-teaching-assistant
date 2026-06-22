@@ -34,6 +34,41 @@ def _get_api_key(key_name: str) -> str:
         pass
     return os.getenv(key_name, "")
 
+def _generate_with_fallback(client, contents: str, system_instruction: str, response_schema, temperature: float) -> str:
+    """
+    Attempts to generate content using the configured GEMINI_MODEL or fallback chain.
+    """
+    from google.genai import types
+
+    # Check if a specific model was overridden in the environment
+    env_model = os.getenv("GEMINI_MODEL", "")
+    if env_model:
+        models_to_try = [env_model]
+    else:
+        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+
+    last_err = None
+    for model_name in models_to_try:
+        try:
+            print(f"[GEMINI CALL] Trying model: {model_name}...")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=response_schema,
+                    system_instruction=system_instruction,
+                    temperature=temperature
+                )
+            )
+            return response.text
+        except Exception as e:
+            last_err = e
+            print(f"[FALLBACK] Model {model_name} failed: {str(last_err)}. Trying next fallback...")
+            continue
+            
+    raise last_err
+
 def explain_concept(transcript: str) -> dict:
     """
     Calls Gemini API to explain the transcribed concept in Hinglish.
@@ -46,22 +81,16 @@ def explain_concept(transcript: str) -> dict:
 
     try:
         from google import genai
-        from google.genai import types
-        
         client = genai.Client(api_key=api_key)
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         
-        response = client.models.generate_content(
-            model=model_name,
+        response_text = _generate_with_fallback(
+            client=client,
             contents=f"Simplify this concept: {transcript}",
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ConceptExplanation,
-                system_instruction=CONCEPT_SYSTEM_PROMPT,
-                temperature=0.2
-            )
+            system_instruction=CONCEPT_SYSTEM_PROMPT,
+            response_schema=ConceptExplanation,
+            temperature=0.2
         )
-        return json.loads(response.text)
+        return json.loads(response_text)
     except Exception as e:
         raise RuntimeError(f"Gemini API call failed: {str(e)}")
 
@@ -77,21 +106,21 @@ def generate_quiz(topic: str) -> dict:
 
     try:
         from google import genai
-        from google.genai import types
-        
         client = genai.Client(api_key=api_key)
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         
-        response = client.models.generate_content(
-            model=model_name,
-            contents=f"Generate a quiz on this topic: {topic}. Every option in the 'options' list MUST strictly follow the 'Hindi term (English translation)' format (e.g., 'Dharti (Earth)', 'Suraj (Sun)'). It is forbidden to output options without the parenthesized English translation.",
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=Quiz,
-                system_instruction=QUIZ_SYSTEM_PROMPT,
-                temperature=0.4
-            )
+        contents_prompt = (
+            f"Generate a quiz on this topic: {topic}. "
+            "Every option in the 'options' list MUST strictly follow the 'Hindi term (English translation)' format "
+            "(e.g., 'Dharti (Earth)', 'Suraj (Sun)'). It is forbidden to output options without the parenthesized English translation."
         )
-        return json.loads(response.text)
+        
+        response_text = _generate_with_fallback(
+            client=client,
+            contents=contents_prompt,
+            system_instruction=QUIZ_SYSTEM_PROMPT,
+            response_schema=Quiz,
+            temperature=0.4
+        )
+        return json.loads(response_text)
     except Exception as e:
         raise RuntimeError(f"Gemini API call failed: {str(e)}")
