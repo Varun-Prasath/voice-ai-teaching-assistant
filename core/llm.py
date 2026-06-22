@@ -17,7 +17,7 @@ class ConceptExplanation(BaseModel):
 
 class QuizQuestion(BaseModel):
     question: str = Field(description="A clear Hinglish question suitable for classroom display (max 15 words).")
-    options: List[str] = Field(description="List of exactly 4 option choices. Each option MUST be in Hinglish with its English translation in parentheses (e.g. 'Dharti (Earth)').")
+    options: List[str] = Field(description="List of exactly 4 options. Every option MUST strictly follow the 'Hindi term (English translation)' format, e.g. 'Dharti (Earth)' or 'Suraj (Sun)'. This is strictly mandatory.")
     correct_index: int = Field(description="0-indexed integer (0-3) indicating the correct option (0 for A, 1 for B, 2 for C, 3 for D).")
 
 class Quiz(BaseModel):
@@ -84,7 +84,7 @@ def generate_quiz(topic: str) -> dict:
         
         response = client.models.generate_content(
             model=model_name,
-            contents=f"Generate a quiz on this topic: {topic}",
+            contents=f"Generate a quiz on this topic: {topic}. Every option in the 'options' list MUST strictly follow the 'Hindi term (English translation)' format (e.g., 'Dharti (Earth)', 'Suraj (Sun)'). It is forbidden to output options without the parenthesized English translation.",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=Quiz,
