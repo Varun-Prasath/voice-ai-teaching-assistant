@@ -11,12 +11,12 @@ load_dotenv()
 
 # Define Pydantic response schemas for Gemini structured outputs
 class ConceptExplanation(BaseModel):
-    explanation: str = Field(description="A short, conversational explanation (2-3 sentences) in natural Hinglish.")
-    key_points: List[str] = Field(description="List of 3 key bullet points, each with a relevant emoji prefix (keep under 12 words per point).")
-    diagram_hint: Optional[str] = Field(description="A string describing a simple step-by-step process/flow diagram, or null/None if a diagram is not helpful.")
+    explanation: str = Field(description="A short, conversational explanation (2-3 sentences) in natural Hinglish. Do NOT use parenthesized translations like 'Suraj (Sun)' here.")
+    key_points: List[str] = Field(description="List of 3 key bullet points, each with a relevant emoji prefix (keep under 12 words per point). Do NOT use parenthesized translations here.")
+    diagram_hint: Optional[str] = Field(description="A string describing a simple step-by-step process/flow diagram. Do NOT use parenthesized translations here. Use null/None if a diagram is not helpful.")
 
 class QuizQuestion(BaseModel):
-    question: str = Field(description="A clear Hinglish question suitable for classroom display (max 15 words).")
+    question: str = Field(description="A clear Hinglish question suitable for classroom display (max 15 words). Do NOT use parenthesized translations like 'Suraj (Sun)' inside the question text.")
     options: List[str] = Field(description="List of exactly 4 options. Every option MUST strictly follow the 'Hindi term (English translation)' format, e.g. 'Dharti (Earth)' or 'Suraj (Sun)'. This is strictly mandatory.")
     correct_index: int = Field(description="0-indexed integer (0-3) indicating the correct option (0 for A, 1 for B, 2 for C, 3 for D).")
 
@@ -111,7 +111,8 @@ def generate_quiz(topic: str) -> dict:
         contents_prompt = (
             f"Generate a quiz on this topic: {topic}. "
             "Every option in the 'options' list MUST strictly follow the 'Hindi term (English translation)' format "
-            "(e.g., 'Dharti (Earth)', 'Suraj (Sun)'). It is forbidden to output options without the parenthesized English translation."
+            "(e.g., 'Dharti (Earth)', 'Suraj (Sun)'). It is forbidden to output options without the parenthesized English translation. "
+            "However, the question text itself MUST NOT contain any parenthesized English translations (e.g. write 'Suraj ka sabse nikatam grah...' instead of 'Suraj (Sun) ka sabse nikatam (Nearest) grah...')."
         )
         
         response_text = _generate_with_fallback(
