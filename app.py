@@ -16,45 +16,63 @@ st.markdown("""
     .stApp {
         background-color: #F8FAFC;
     }
-    .smartboard-title {
-        font-size: 46px !important;
+    .hero-container {
+        background-color: #1E40AF;
+        padding: 24px 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 15px -3px rgba(30, 64, 175, 0.1), 0 4px 6px -2px rgba(30, 64, 175, 0.05);
+        border: 2px solid #2563EB;
+    }
+    .hero-title {
+        font-size: 38px !important;
         font-weight: 800;
-        color: #1E3A8A;
-        text-align: center;
-        margin-top: 10px;
-        margin-bottom: 5px;
+        color: #FFFFFF !important;
+        margin: 0 !important;
+        line-height: 1.2;
     }
-    .smartboard-subtitle {
-        font-size: 20px !important;
-        color: #475569;
-        text-align: center;
-        margin-bottom: 30px;
+    .hero-subtitle {
+        font-size: 18px !important;
+        color: #F8FAFC !important;
+        margin-top: 8px !important;
+        margin-bottom: 0 !important;
         font-weight: 500;
+        opacity: 0.95;
     }
+    .hero-accent {
+        color: #F59E0B !important;
+        font-weight: 700;
+    }
+    
     /* Tab formatting */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 20px;
+        gap: 15px;
         justify-content: center;
+        margin-bottom: 25px;
     }
     .stTabs [data-baseweb="tab"] {
-        font-size: 22px !important;
+        font-size: 20px !important;
         font-weight: bold !important;
-        height: 60px !important;
-        background-color: #E2E8F0 !important;
+        height: 55px !important;
+        background-color: #FFFFFF !important;
         border-radius: 8px 8px 0px 0px !important;
-        padding: 10px 30px !important;
-        color: #1E293B !important;
+        padding: 10px 25px !important;
+        color: #475569 !important; /* Muted Text */
+        border: 1px solid #E2E8F0 !important;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #1E3A8A !important;
+        background-color: #1E40AF !important; /* Primary Blue */
         color: white !important;
+        border: 1px solid #1E40AF !important;
     }
+    
     /* Force high contrast dark text for base text labels and markdown paragraphs */
     div[data-testid="stWidgetLabel"] p, 
     div[data-testid="stMarkdownContainer"] p, 
     div[data-testid="stText"] p,
     .stApp label {
-        color: #0F172A !important;
+        color: #1E293B !important;
     }
     /* Ensure all button text paragraphs inherit color from their parent button container */
     .stApp button p {
@@ -63,8 +81,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="smartboard-title">🏫 Voice-Enabled AI Teaching Assistant</div>', unsafe_allow_html=True)
-st.markdown('<div class="smartboard-subtitle">Haryana School Smart Board Co-Pilot (Hinglish Support)</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="hero-container">
+    <div class="hero-title">🎓 Voice-Enabled AI Teaching Assistant</div>
+    <div class="hero-subtitle">Smart Board Co-Pilot for <span class="hero-accent">Government Schools</span></div>
+</div>
+""", unsafe_allow_html=True)
 
 # Create the two core views as tabs
 tab_concept, tab_quiz = st.tabs(["📝 Explain a Concept", "❓ Take a Quiz"])

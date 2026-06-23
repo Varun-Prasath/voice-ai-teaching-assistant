@@ -45,11 +45,13 @@ def _generate_with_fallback(client, contents: str, system_instruction: str, resp
     if env_model:
         models_to_try = [env_model]
     else:
-        models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        models_to_try = ["gemini-2.5-flash", "gemini-flash-latest"]
 
     last_err = None
-    for model_name in models_to_try:
+    for i, model_name in enumerate(models_to_try):
         try:
+            if i > 0:
+                st.warning("🔄 Retrying automatically...")
             print(f"[GEMINI CALL] Trying model: {model_name}...")
             response = client.models.generate_content(
                 model=model_name,
@@ -67,7 +69,9 @@ def _generate_with_fallback(client, contents: str, system_instruction: str, resp
             print(f"[FALLBACK] Model {model_name} failed: {str(last_err)}. Trying next fallback...")
             continue
             
-    raise last_err
+    if last_err is not None:
+        raise last_err
+    raise RuntimeError("No Gemini models succeeded.")
 
 def explain_concept(transcript: str) -> dict:
     """
@@ -125,3 +129,23 @@ def generate_quiz(topic: str) -> dict:
         return json.loads(response_text)
     except Exception as e:
         raise RuntimeError(f"Gemini API call failed: {str(e)}")
+
+def get_friendly_error_message(e: Exception) -> str:
+    """
+    Translates raw exception messages into user-friendly notices for school Smart Boards.
+    """
+    import traceback
+    # Print the full technical details to standard console output/logs
+    print("------------------ TECHNICAL ERROR LOG ------------------")
+    traceback.print_exc()
+    print("---------------------------------------------------------")
+
+    err_msg = str(e).lower()
+    if "429" in err_msg or "quota" in err_msg or "limit" in err_msg or "exhausted" in err_msg:
+        return "🤖 The AI assistant is currently busy. Please try again in a few moments."
+    elif "503" in err_msg or "unavailable" in err_msg:
+        return "⚠️ The AI service is temporarily busy. Please try again shortly."
+    elif "connection" in err_msg or "network" in err_msg or "timeout" in err_msg or "connect" in err_msg:
+        return "📡 Connection issue detected. Please retry shortly."
+    else:
+        return "⚠️ Something unexpected happened. Please try again."
