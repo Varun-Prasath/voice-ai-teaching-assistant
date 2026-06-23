@@ -1,7 +1,7 @@
 import streamlit as st
 import textwrap
 from core.stt import transcribe_audio
-from core.llm import generate_quiz
+from core.llm import generate_quiz, get_friendly_error_message
 from core.tts import synthesize_speech
 
 def render_quiz_view():
@@ -14,12 +14,13 @@ def render_quiz_view():
             min-height: 110px !important;
             font-size: 24px !important;
             font-weight: bold !important;
-            color: white !important;
+            color: #1E40AF !important; /* Primary Blue text */
+            background-color: #FFFFFF !important; /* Card Background */
             border-radius: 12px !important;
-            border: none !important;
+            border: 2px solid #E2E8F0 !important;
             padding: 20px !important;
             margin-bottom: 15px !important;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+            box-shadow: 0 4px 6px rgba(30, 64, 175, 0.05) !important;
             transition: all 0.15s ease-in-out !important;
             display: flex !important;
             align-items: center !important;
@@ -28,21 +29,16 @@ def render_quiz_view():
             text-align: center !important;
         }
         
-        /* Default option card background colors using column-specific indexing */
-        div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(1) button { background-color: #2563EB !important; } /* Blue */
-        div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(1) button { background-color: #4F46E5 !important; } /* Indigo */
-        div[data-testid="column"]:nth-of-type(1) div.stButton:nth-of-type(2) button { background-color: #0F766E !important; } /* Teal */
-        div[data-testid="column"]:nth-of-type(2) div.stButton:nth-of-type(2) button { background-color: #D97706 !important; } /* Amber */
-        
         div[data-testid="column"] button:hover {
             transform: scale(1.02) !important;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
-            opacity: 0.95 !important;
+            box-shadow: 0 6px 12px rgba(30, 64, 175, 0.1) !important;
+            border-color: #2563EB !important; /* Secondary Blue hover border */
+            background-color: #F8FAFC !important;
         }
         
         /* Question Card display */
         .quiz-q-card {
-            background-color: #1E3A8A;
+            background-color: #1E40AF; /* Primary Blue */
             color: white;
             padding: 35px 25px;
             border-radius: 12px;
@@ -50,8 +46,8 @@ def render_quiz_view():
             font-weight: bold;
             text-align: center;
             margin-bottom: 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border: 3px solid #1D4ED8;
+            box-shadow: 0 10px 15px -3px rgba(30, 64, 175, 0.15);
+            border: 3px solid #2563EB; /* Secondary Blue */
             line-height: 1.4;
         }
     </style>
@@ -76,6 +72,8 @@ def render_quiz_view():
         st.session_state.quiz_audio_bytes = None
     if "quiz_topic" not in st.session_state:
         st.session_state.quiz_topic = ""
+    if "last_active_quiz_audio" not in st.session_state:
+        st.session_state.last_active_quiz_audio = None
 
     # Helper function to trigger option selection
     def select_option(idx, correct_idx):
@@ -87,32 +85,51 @@ def render_quiz_view():
 
     # View 1: Quiz setup / launch screen
     if not st.session_state.quiz_active and not st.session_state.quiz_finished:
-        st.markdown('<div style="font-size: 26px; font-weight: bold; color: #1E3A8A; margin-bottom: 10px;">❓ Start a Classroom Quiz</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 26px; font-weight: bold; color: #1E40AF; margin-bottom: 10px;">❓ Start a Classroom Quiz</div>', unsafe_allow_html=True)
         st.markdown('<div style="font-size: 18px; color: #475569; margin-bottom: 20px;">Use your voice to request a topic (e.g. "Create a quiz on photosynthesis"), or enter it manually.</div>', unsafe_allow_html=True)
 
-        audio_file = st.audio_input("Record quiz topic command")
-        text_topic = st.text_input("Or enter the topic manually (e.g. Gravity, Fractions, Photosynthesis)")
+        # Primary Action Card for Voice Input
+        st.markdown("""
+        <div style="background-color: #FFFFFF; border: 2px solid #2563EB; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.05); margin-bottom: 15px;">
+            <div style="font-size: 20px; font-weight: 700; color: #1E40AF; margin-bottom: 5px;">🎙️ Speak Quiz Topic (Primary Action)</div>
+            <div style="font-size: 15px; color: #475569; margin-bottom: 0px;">Tap the record button below to state the quiz topic.</div>
+        </div>
+        """, unsafe_allow_html=True)
+        audio_file = st.audio_input("Speak Quiz Topic", key="quiz_mic_input")
 
-        if st.button("Generate Quiz Show", key="generate_quiz_btn"):
+        # Secondary manual text input
+        st.markdown('<div style="margin-top: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
+        text_topic = st.text_input("✏️ Option: Enter the topic manually (e.g. Gravity, Fractions, Photosynthesis)", key="quiz_text_input")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Fallback File Uploader Expander
+        st.markdown('<div style="margin-top: 5px; margin-bottom: 25px;">', unsafe_allow_html=True)
+        with st.expander("📁 Fallback: Upload a voice command audio file instead"):
+            uploaded_file = st.file_uploader("Upload wav/mp3/m4a audio file", type=["wav", "mp3", "m4a"], key="quiz_file_upload")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        active_audio = audio_file if audio_file is not None else uploaded_file
+
+        if st.button("🎯 Generate Quiz", key="generate_quiz_btn"):
             topic = ""
             
             # 1. Process voice transcription
-            if audio_file is not None:
-                with st.spinner("Step 1/2: Listening to your command (STT)..."):
+            if active_audio is not None:
+                with st.spinner("🎤 Listening..."):
                     try:
-                        topic = transcribe_audio(audio_file)
+                        topic = transcribe_audio(active_audio)
                         st.info(f"Command detected: '{topic}'")
                     except Exception as e:
-                        st.error(f"Speech transcription failed: {str(e)}. Falling back to manual text input.")
+                        st.error(get_friendly_error_message(e))
                         topic = ""
 
             # 2. Process text input fallback
             if not topic and text_topic:
                 topic = text_topic.strip()
 
-            # 3. Call Gemini to generate the quiz
+            # 3. Call generator
             if topic:
-                with st.spinner("Step 2/2: Generating quiz questions with Gemini LLM..."):
+                with st.spinner("📝 Preparing quiz questions..."):
                     try:
                         quiz_data = generate_quiz(topic)
                         questions = quiz_data.get("questions", [])
@@ -128,9 +145,9 @@ def render_quiz_view():
                             st.session_state.quiz_topic = topic
                             st.rerun()
                         else:
-                            st.error("No questions were generated. Try a simpler topic or check your key.")
+                            st.error("⚠️ Something unexpected happened. Please try again.")
                     except Exception as e:
-                        st.error(f"Quiz Generation Error: {str(e)}")
+                        st.error(get_friendly_error_message(e))
             else:
                 st.warning("Please record your voice or enter a topic manually to start.")
 
@@ -149,14 +166,14 @@ def render_quiz_view():
         st.markdown(f'<div style="font-size: 20px; font-weight: bold; color: #475569; margin-bottom: 5px;">QUESTION {q_idx + 1} OF {total_q}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="quiz-q-card">{question_text}</div>', unsafe_allow_html=True)
 
-        # Stage 3: In-Memory TTS audio generation (runs once per question)
+        # Stage 3: Audio generation (runs once per question)
         if not st.session_state.quiz_audio_bytes and not st.session_state.quiz_answered:
-            with st.spinner("Synthesizing question audio (TTS)..."):
+            with st.spinner("🎯 Almost ready..."):
                 try:
                     st.session_state.quiz_audio_bytes = synthesize_speech(question_text)
                     st.rerun()
                 except Exception as e:
-                    st.error(f"TTS Speech Error: {str(e)}")
+                    st.error(get_friendly_error_message(e))
                     st.session_state.quiz_audio_bytes = b""
                     st.rerun()
 
@@ -166,17 +183,16 @@ def render_quiz_view():
 
         # CSS-only client-side visual timer (prevents server sleep-loop rerun lags)
         if not st.session_state.quiz_answered:
-            st.markdown(textwrap.dedent(f"""
-            <div style="background-color: #E2E8F0; width: 100%; height: 12px; border-radius: 6px; margin-bottom: 25px; overflow: hidden; border: 1px solid #CBD5E1;">
-                <div style="background-color: #EF4444; height: 100%; width: 100%; animation: quiz-timer 15s linear forwards;"></div>
-            </div>
-            <style>
-                @keyframes quiz-timer {{
-                    from {{ width: 100%; }}
-                    to {{ width: 0%; }}
-                }}
-            </style>
-            """).strip(), unsafe_allow_html=True)
+            timer_html = f"""<div style="background-color: #E2E8F0; width: 100%; height: 12px; border-radius: 6px; margin-bottom: 25px; overflow: hidden; border: 1px solid #E2E8F0;">
+<div style="background-color: #DC2626; height: 100%; width: 100%; animation: quiz-timer 15s linear forwards;"></div>
+</div>
+<style>
+@keyframes quiz-timer {{
+from {{ width: 100%; }}
+to {{ width: 0%; }}
+}}
+</style>"""
+            st.markdown(timer_html, unsafe_allow_html=True)
 
         # Dynamic CSS Injection to highlight option button states (Green/Red feedback)
         if st.session_state.quiz_answered:
@@ -192,12 +208,19 @@ def render_quiz_view():
             
             style_overrides = "<style>"
             # Fade all column buttons
-            style_overrides += "div[data-testid=\"column\"] button { opacity: 0.3 !important; pointer-events: none !important; }"
-            # Highlight correct option
-            style_overrides += f"{correct_selector} {{ background-color: #10B981 !important; border: 4px solid #064E3B !important; opacity: 1.0 !important; }}"
-            # If incorrect selection, highlight selected option
+            style_overrides += "div[data-testid=\"column\"] button { opacity: 0.3 !important; pointer-events: none !important; color: #475569 !important; border-color: #E2E8F0 !important; }"
+            
+            # Highlight selected option (Secondary Blue: #2563EB)
+            if selected_selector:
+                style_overrides += f"{selected_selector} {{ background-color: #2563EB !important; border: 3px solid #1E40AF !important; color: white !important; opacity: 1.0 !important; }}"
+            
+            # Highlight correct option (Success Green: #16A34A)
+            style_overrides += f"{correct_selector} {{ background-color: #16A34A !important; border: 3px solid #15803D !important; color: white !important; opacity: 1.0 !important; }}"
+            
+            # If incorrect selection, override highlight selected option with Incorrect Red (#DC2626)
             if selected_selector and selected_selector != correct_selector:
-                style_overrides += f"{selected_selector} {{ background-color: #EF4444 !important; border: 4px solid #7F1D1D !important; opacity: 1.0 !important; }}"
+                style_overrides += f"{selected_selector} {{ background-color: #DC2626 !important; border: 3px solid #991B1B !important; color: white !important; opacity: 1.0 !important; }}"
+            
             style_overrides += "</style>"
             st.markdown(style_overrides, unsafe_allow_html=True)
 
@@ -219,10 +242,10 @@ def render_quiz_view():
         if st.session_state.quiz_answered:
             is_correct = (st.session_state.quiz_selected_idx == correct_index)
             if is_correct:
-                st.success("🎉 **Shabash! Correct Answer!**")
+                st.success("🎉 Shabash! Correct Answer!")
             else:
                 correct_desc = options[correct_index]
-                st.error(f"❌ **Oops! Wrong Answer.** Correct option was: **{correct_desc}**")
+                st.error(f"❌ Oops! Wrong Answer. Correct option was: {correct_desc}")
 
             # Navigation buttons
             if q_idx + 1 < total_q:
@@ -243,8 +266,8 @@ def render_quiz_view():
         score = st.session_state.quiz_score
         total = len(st.session_state.quiz_questions)
         topic = st.session_state.quiz_topic
-
-        st.markdown('<div style="font-size: 26px; font-weight: bold; color: #1E3A8A; margin-bottom: 10px;">🏆 Quiz Complete!</div>', unsafe_allow_html=True)
+        incorrect = total - score
+        accuracy = int((score / total) * 100) if total > 0 else 0
 
         # Evaluate score and choose warm Hinglish feedback
         feedback = ""
@@ -255,19 +278,30 @@ def render_quiz_view():
         else:
             feedback = "Koi baat nahi bacho! Seekhte rahenge. Ek baar fir se try karte hain! 💪"
 
-        st.markdown(textwrap.dedent(f"""
-        <div style="background-color: #FFFFFF; border: 3px solid #1E3A8A; border-radius: 12px; padding: 30px; text-align: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 25px;">
-            <div style="font-size: 28px; font-weight: bold; color: #1E3A8A; margin-bottom: 15px;">
-                Topic: {topic}
-            </div>
-            <div style="font-size: 52px; font-weight: 800; color: #2563EB; margin-bottom: 15px;">
-                🎯 Score: {score} / {total}
-            </div>
-            <div style="font-size: 24px; font-weight: bold; color: #1E293B; line-height: 1.4;">
-                {feedback}
-            </div>
-        </div>
-        """).strip(), unsafe_allow_html=True)
+        html_content = (
+            f'<div style="background-color: #FFFFFF; border: 3px solid #F59E0B; border-radius: 16px; padding: 35px; text-align: center; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.1); margin-bottom: 25px;">'
+            f'<div style="font-size: 36px; font-weight: 800; color: #F59E0B; margin-bottom: 5px;">🏆 Quiz Complete!</div>'
+            f'<div style="font-size: 22px; color: #475569; margin-bottom: 25px; font-weight: 600;">Topic: {topic}</div>'
+            f'<div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; flex-wrap: wrap;">'
+            f'<div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 15px 25px; min-width: 120px;">'
+            f'<div style="font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 5px;">✅ Correct</div>'
+            f'<div style="font-size: 28px; color: #16A34A; font-weight: 800;">{score}</div>'
+            f'</div>'
+            f'<div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 15px 25px; min-width: 120px;">'
+            f'<div style="font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 5px;">❌ Incorrect</div>'
+            f'<div style="font-size: 28px; color: #DC2626; font-weight: 800;">{incorrect}</div>'
+            f'</div>'
+            f'<div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 15px 25px; min-width: 120px;">'
+            f'<div style="font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 5px;">📈 Accuracy</div>'
+            f'<div style="font-size: 28px; color: #2563EB; font-weight: 800;">{accuracy}%</div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="font-size: 24px; font-weight: bold; color: #1E293B; line-height: 1.4; padding-top: 15px; border-top: 1px solid #E2E8F0;">'
+            f'🎉 {feedback}'
+            f'</div>'
+            f'</div>'
+        )
+        st.markdown(html_content, unsafe_allow_html=True)
 
         if st.button("Take Another Quiz 🔄", key="reset_quiz_btn"):
             st.session_state.quiz_active = False
