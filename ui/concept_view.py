@@ -28,7 +28,7 @@ def render_concept_view():
 
     # Secondary Expander for File Upload Fallback
     st.markdown('<div style="margin-top: 15px; margin-bottom: 25px;">', unsafe_allow_html=True)
-    with st.expander("📁 Fallback: Upload an audio file instead"):
+    with st.expander("📁 Fallback: Upload an audio file instead", key="concept_fallback_expander"):
         uploaded_file = st.file_uploader("Upload wav/mp3/m4a audio file", type=["wav", "mp3", "m4a"], key="concept_file_upload")
     st.markdown('</div>', unsafe_allow_html=True)
 

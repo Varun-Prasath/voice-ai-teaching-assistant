@@ -48,10 +48,11 @@ def _generate_with_fallback(client, contents: str, system_instruction: str, resp
         models_to_try = ["gemini-2.5-flash", "gemini-flash-latest"]
 
     last_err = None
+    retry_warning_placeholder = st.empty()
     for i, model_name in enumerate(models_to_try):
         try:
             if i > 0:
-                st.warning("🔄 Retrying automatically...")
+                retry_warning_placeholder.warning("🤖 AI service is currently busy. Trying a backup model...")
             print(f"[GEMINI CALL] Trying model: {model_name}...")
             response = client.models.generate_content(
                 model=model_name,
@@ -63,12 +64,14 @@ def _generate_with_fallback(client, contents: str, system_instruction: str, resp
                     temperature=temperature
                 )
             )
+            retry_warning_placeholder.empty()
             return response.text
         except Exception as e:
             last_err = e
             print(f"[FALLBACK] Model {model_name} failed: {str(last_err)}. Trying next fallback...")
             continue
             
+    retry_warning_placeholder.empty()
     if last_err is not None:
         raise last_err
     raise RuntimeError("No Gemini models succeeded.")
@@ -141,11 +144,7 @@ def get_friendly_error_message(e: Exception) -> str:
     print("---------------------------------------------------------")
 
     err_msg = str(e).lower()
-    if "429" in err_msg or "quota" in err_msg or "limit" in err_msg or "exhausted" in err_msg:
-        return "🤖 The AI assistant is currently busy. Please try again in a few moments."
-    elif "503" in err_msg or "unavailable" in err_msg:
-        return "⚠️ The AI service is temporarily busy. Please try again shortly."
-    elif "connection" in err_msg or "network" in err_msg or "timeout" in err_msg or "connect" in err_msg:
+    if "connection" in err_msg or "network" in err_msg or "timeout" in err_msg or "connect" in err_msg:
         return "📡 Connection issue detected. Please retry shortly."
     else:
-        return "⚠️ Something unexpected happened. Please try again."
+        return "⚠️ The AI assistant is temporarily unavailable. Please try again in a few minutes."

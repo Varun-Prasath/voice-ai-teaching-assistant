@@ -78,6 +78,46 @@ st.markdown("""
     .stApp button p {
         color: inherit !important;
     }
+    
+    /* Voice recorder widget (st.audio_input) styling */
+    .stAudioInput, 
+    div[data-testid="stAudioInput"],
+    .st-key-concept_mic_input,
+    .st-key-quiz_mic_input {
+        background-color: #F1F5F9 !important;
+        border: 2px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    }
+    
+    /* Fallback upload expander container styling */
+    div[data-testid="stExpander"],
+    .st-key-concept_fallback_expander,
+    .st-key-quiz_fallback_expander {
+        background-color: #FFFFFF !important;
+        border: 2px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px rgba(30, 64, 175, 0.02) !important;
+    }
+    
+    /* Fallback upload expander header styling */
+    div[data-testid="stExpander"] summary,
+    .st-key-concept_fallback_expander summary,
+    .st-key-quiz_fallback_expander summary {
+        background-color: #F8FAFC !important;
+        border-radius: 10px !important;
+        padding: 10px 15px !important;
+    }
+    
+    /* Fallback upload expander title text styling */
+    div[data-testid="stExpander"] summary p,
+    .st-key-concept_fallback_expander summary p,
+    .st-key-quiz_fallback_expander summary p {
+        color: #475569 !important;
+        font-weight: 600 !important;
+        font-size: 18px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
