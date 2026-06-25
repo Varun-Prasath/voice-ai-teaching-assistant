@@ -79,16 +79,59 @@ st.markdown("""
         color: inherit !important;
     }
     
+    /* Unified Card for Voice Action */
+    .st-key-concept_voice_card,
+    .st-key-quiz_voice_card {
+        background-color: #FFFFFF !important;
+        border: 2px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 6px rgba(30, 64, 175, 0.02) !important;
+        margin-bottom: 25px !important;
+    }
+    
     /* Voice recorder widget (st.audio_input) styling */
     .stAudioInput, 
     div[data-testid="stAudioInput"],
     .st-key-concept_mic_input,
     .st-key-quiz_mic_input {
-        background-color: #F1F5F9 !important;
+        background-color: #FFFFFF !important;
         border: 2px solid #E2E8F0 !important;
         border-radius: 12px !important;
         padding: 12px !important;
-        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01) !important;
+    }
+    /* Force inner components of st.audio_input to be light theme and readable */
+    div[data-testid="stAudioInput"] div, 
+    div[data-testid="stAudioInput"] span,
+    div[data-testid="stAudioInput"] p,
+    div[data-testid="stAudioInput"] button {
+        background-color: #FFFFFF !important;
+        color: #1E293B !important;
+    }
+    div[data-testid="stAudioInput"] label {
+        display: none !important;
+    }
+    
+    /* Manual text input (st.text_input) styling */
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {
+        background-color: #FFFFFF !important;
+        border: 2px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 4px 8px !important;
+        color: #1E293B !important;
+        transition: border-color 0.15s ease-in-out !important;
+    }
+    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+        border-color: #2563EB !important;
+    }
+    div[data-testid="stTextInput"] input {
+        background-color: transparent !important;
+        color: #1E293B !important;
+    }
+    div[data-testid="stTextInput"] input::placeholder {
+        color: #64748B !important;
+        opacity: 1 !important;
     }
     
     /* Fallback upload expander container styling */
@@ -117,6 +160,33 @@ st.markdown("""
         color: #475569 !important;
         font-weight: 600 !important;
         font-size: 18px !important;
+    }
+    
+    /* Primary action buttons styling (Prominent CTA) */
+    .st-key-simplify_concept_btn button,
+    .st-key-generate_quiz_btn button {
+        background-color: #1E40AF !important;
+        color: #FFFFFF !important;
+        font-size: 22px !important;
+        font-weight: bold !important;
+        padding: 16px 32px !important;
+        border-radius: 12px !important;
+        border: 2px solid #2563EB !important;
+        box-shadow: 0 4px 6px rgba(30, 64, 175, 0.15) !important;
+        transition: all 0.2s ease-in-out !important;
+        width: auto !important;
+        min-height: 55px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .st-key-simplify_concept_btn button:hover,
+    .st-key-generate_quiz_btn button:hover {
+        background-color: #2563EB !important;
+        border-color: #3B82F6 !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 6px 12px rgba(30, 64, 175, 0.25) !important;
     }
 </style>
 """, unsafe_allow_html=True)

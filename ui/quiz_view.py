@@ -88,14 +88,11 @@ def render_quiz_view():
         st.markdown('<div style="font-size: 26px; font-weight: bold; color: #1E40AF; margin-bottom: 10px;">❓ Start a Classroom Quiz</div>', unsafe_allow_html=True)
         st.markdown('<div style="font-size: 18px; color: #475569; margin-bottom: 20px;">Use your voice to request a topic (e.g. "Create a quiz on photosynthesis"), or enter it manually.</div>', unsafe_allow_html=True)
 
-        # Primary Action Card for Voice Input
-        st.markdown("""
-        <div style="background-color: #FFFFFF; border: 2px solid #2563EB; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.05); margin-bottom: 15px;">
-            <div style="font-size: 20px; font-weight: 700; color: #1E40AF; margin-bottom: 5px;">🎙️ Speak Quiz Topic (Primary Action)</div>
-            <div style="font-size: 15px; color: #475569; margin-bottom: 0px;">Tap the record button below to state the quiz topic.</div>
-        </div>
-        """, unsafe_allow_html=True)
-        audio_file = st.audio_input("Speak Quiz Topic", key="quiz_mic_input")
+        # Primary Action Card for Voice Input (Merged into unified container card)
+        with st.container(key="quiz_voice_card"):
+            st.markdown('<div style="font-size: 20px; font-weight: 700; color: #1E40AF; margin-bottom: 5px;">🎙️ Speak Quiz Topic (Primary Action)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size: 15px; color: #475569; margin-bottom: 12px;">Tap the record button below to state the quiz topic.</div>', unsafe_allow_html=True)
+            audio_file = st.audio_input("Speak Quiz Topic", label_visibility="collapsed", key="quiz_mic_input")
 
         # Secondary manual text input
         st.markdown('<div style="margin-top: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
@@ -115,10 +112,9 @@ def render_quiz_view():
             
             # 1. Process voice transcription
             if active_audio is not None:
-                with st.spinner("🎤 Listening..."):
+                with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
                         topic = transcribe_audio(active_audio)
-                        st.info(f"Command detected: '{topic}'")
                     except Exception as e:
                         st.error(get_friendly_error_message(e))
                         topic = ""
@@ -129,7 +125,8 @@ def render_quiz_view():
 
             # 3. Call generator
             if topic:
-                with st.spinner("📝 Preparing quiz questions..."):
+                st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>🎤 Heard: '{topic}'</div>", unsafe_allow_html=True)
+                with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
                         quiz_data = generate_quiz(topic)
                         questions = quiz_data.get("questions", [])
@@ -168,7 +165,7 @@ def render_quiz_view():
 
         # Stage 3: Audio generation (runs once per question)
         if not st.session_state.quiz_audio_bytes and not st.session_state.quiz_answered:
-            with st.spinner("🎯 Almost ready..."):
+            with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                 try:
                     st.session_state.quiz_audio_bytes = synthesize_speech(question_text)
                     st.rerun()
@@ -303,7 +300,7 @@ to {{ width: 0%; }}
         )
         st.markdown(html_content, unsafe_allow_html=True)
 
-        if st.button("Take Another Quiz 🔄", key="reset_quiz_btn"):
+        if st.button("🔄 New Quiz", key="reset_quiz_btn"):
             st.session_state.quiz_active = False
             st.session_state.quiz_finished = False
             st.session_state.quiz_questions = []

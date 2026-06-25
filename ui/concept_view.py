@@ -17,14 +17,11 @@ def render_concept_view():
     if "last_active_audio" not in st.session_state:
         st.session_state.last_active_audio = None
 
-    # Primary Action Card for Voice Input
-    st.markdown("""
-    <div style="background-color: #FFFFFF; border: 2px solid #2563EB; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.05); margin-bottom: 15px;">
-        <div style="font-size: 20px; font-weight: 700; color: #1E40AF; margin-bottom: 5px;">🎙️ Speak to Smart Board (Primary Action)</div>
-        <div style="font-size: 15px; color: #475569; margin-bottom: 0px;">Tap the record button below to speak your question directly to the system.</div>
-    </div>
-    """, unsafe_allow_html=True)
-    audio_file = st.audio_input("Speak to Smart Board", key="concept_mic_input")
+    # Primary Action Card for Voice Input (Merged into unified container card)
+    with st.container(key="concept_voice_card"):
+        st.markdown('<div style="font-size: 20px; font-weight: 700; color: #1E40AF; margin-bottom: 5px;">🎙️ Speak to Smart Board (Primary Action)</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 15px; color: #475569; margin-bottom: 12px;">Tap the record button below to speak your question directly to the system.</div>', unsafe_allow_html=True)
+        audio_file = st.audio_input("Speak to Smart Board", label_visibility="collapsed", key="concept_mic_input")
 
     # Secondary Expander for File Upload Fallback
     st.markdown('<div style="margin-top: 15px; margin-bottom: 25px;">', unsafe_allow_html=True)
@@ -48,7 +45,7 @@ def render_concept_view():
         # Stage 1: Transcription
         if not st.session_state.concept_transcript:
             if st.button("Simplify Concept", key="simplify_concept_btn"):
-                with st.spinner("🎤 Listening..."):
+                with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
                         st.session_state.concept_transcript = transcribe_audio(active_audio)
                         st.rerun()
@@ -58,7 +55,8 @@ def render_concept_view():
 
         # Stage 2: Explanation (automatic trigger after Stage 1)
         if st.session_state.concept_transcript and not st.session_state.concept_explanation:
-            with st.spinner("🧠 Understanding the topic..."):
+            st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>🎤 Heard: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
+            with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                 try:
                     st.session_state.concept_explanation = explain_concept(st.session_state.concept_transcript)
                     st.rerun()
@@ -69,7 +67,8 @@ def render_concept_view():
 
         # Stage 3: TTS Synthesis (automatic trigger after Stage 2)
         if st.session_state.concept_explanation and not st.session_state.concept_audio_bytes:
-            with st.spinner("✨ Creating classroom content..."):
+            st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>🎤 Heard: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
+            with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                 try:
                     explanation_text = st.session_state.concept_explanation.get("explanation", "")
                     st.session_state.concept_audio_bytes = synthesize_speech(explanation_text)
@@ -141,3 +140,13 @@ def render_concept_view():
                     📊 Process Flow: {diagram_hint}
                 </div>
                 """, unsafe_allow_html=True)
+
+        # Reset action button
+        st.markdown('<div style="margin-top: 25px; margin-bottom: 25px;">', unsafe_allow_html=True)
+        if st.button("🔄 Ask Another Question", key="reset_concept_btn"):
+            st.session_state.concept_transcript = ""
+            st.session_state.concept_explanation = None
+            st.session_state.concept_audio_bytes = None
+            st.session_state.last_active_audio = None
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
