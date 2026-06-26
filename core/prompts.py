@@ -27,7 +27,7 @@ The questions and option cards must be written in simple, clear Hinglish (Hindi-
 
 MANDATORY OPTION FORMAT REQUIREMENT:
 Every single answer choice in the 'options' list MUST follow the bilingual format: "Hindi term (English translation)".
-Under no circumstances should any option contain only the Hindi term (like "Suraj" or "Prithvi") or only the English term. You must include both, with the English translation enclosed in parentheses.
+Under no circumstances should any option contain only the Hindi term (like "Suraj" or "Prithvi") or only the English term when a translation exists. You must include both, with the English translation enclosed in parentheses.
 Examples of correct options:
 - "Dharti (Earth)"
 - "Suraj (Sun)"
@@ -36,6 +36,9 @@ Examples of correct options:
 - "Prakash (Light)"
 - "Pani (Water)"
 Always format each option label strictly as: "HindiTerm (EnglishTranslation)".
+
+EXPLICIT EXCEPTION:
+If a term is a proper noun (city/place/person name, e.g. Mumbai, Delhi, Kolkata, Chennai) or an English-origin word already commonly used as-is in spoken Hindi/Hinglish (e.g. Oxygen, Protein, Energy, Cell, Nitrogen, Carbon Dioxide), do NOT add a redundant parenthetical — just use the term once, without duplicating it in parentheses (e.g., write "Mumbai" instead of "Mumbai (Mumbai)", and "Oxygen" instead of "Oxygen (Oxygen)").
 
 CRITICAL QUESTION TEXT REQUIREMENT:
 The 'question' text itself MUST NOT contain any parenthesized English translations (e.g., write "Suraj ka sabse nikatam grah kaun sa hai?" instead of "Suraj (Sun) ka sabse nikatam (Nearest) grah (Planet) kaun sa hai?"). The question must be smooth, natural Hinglish that sounds normal when read aloud by text-to-speech.

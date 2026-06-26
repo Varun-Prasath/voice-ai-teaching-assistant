@@ -55,7 +55,7 @@ def render_concept_view():
                             st.session_state.concept_transcript = ""
                             st.session_state.concept_explanation = None
                             st.session_state.concept_audio_bytes = None
-                            st.error("🎤 No speech detected. Please record your question again.")
+                            st.error("🎤 Didn't catch that — please try speaking again")
                             return
                         
                         st.session_state.concept_transcript = transcript.strip()

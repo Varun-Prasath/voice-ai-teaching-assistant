@@ -140,7 +140,7 @@ def render_quiz_view():
                             st.session_state.quiz_finished = False
                             st.session_state.quiz_audio_bytes = None
                             st.session_state.quiz_topic = ""
-                            st.error("🎤 No speech detected. Please record your question again.")
+                            st.error("🎤 Didn't catch that — please try speaking again")
                             return
                         
                         topic = transcript.strip()
