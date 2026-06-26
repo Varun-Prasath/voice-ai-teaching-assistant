@@ -16,6 +16,8 @@ def render_concept_view():
         st.session_state.concept_audio_bytes = None
     if "last_active_audio" not in st.session_state:
         st.session_state.last_active_audio = None
+    if "concept_input_type" not in st.session_state:
+        st.session_state.concept_input_type = "voice"
 
     # Primary Action Card for Voice Input (Merged into unified container card)
     with st.container(key="concept_voice_card"):
@@ -23,8 +25,13 @@ def render_concept_view():
         st.markdown('<div style="font-size: 15px; color: #475569; margin-bottom: 12px;">Tap the record button below to speak your question directly to the system.</div>', unsafe_allow_html=True)
         audio_file = st.audio_input("Speak to Smart Board", label_visibility="collapsed", key="concept_mic_input")
 
+    # Secondary manual text input
+    st.markdown('<div style="margin-top: 15px; margin-bottom: 10px;">', unsafe_allow_html=True)
+    text_question = st.text_input("✏️ Option: Type your question manually (e.g. 'Gravity kya hota hai', 'Photosynthesis ke steps samjhao')", key="concept_text_input")
+    st.markdown('</div>', unsafe_allow_html=True)
+
     # Secondary Expander for File Upload Fallback
-    st.markdown('<div style="margin-top: 15px; margin-bottom: 25px;">', unsafe_allow_html=True)
+    st.markdown('<div style="margin-top: 5px; margin-bottom: 25px;">', unsafe_allow_html=True)
     with st.expander("📁 Fallback: Upload an audio file instead", key="concept_fallback_expander"):
         uploaded_file = st.file_uploader("Upload wav/mp3/m4a audio file", type=["wav", "mp3", "m4a"], key="concept_file_upload")
     st.markdown('</div>', unsafe_allow_html=True)
@@ -37,14 +44,23 @@ def render_concept_view():
         st.session_state.concept_explanation = None
         st.session_state.concept_audio_bytes = None
         st.session_state.last_active_audio = active_audio
+        st.session_state.concept_input_type = "voice"
         st.rerun()
 
-    if active_audio is not None:
+    # Show info about input sources
+    if active_audio is not None and not st.session_state.concept_transcript:
         st.info("Audio source detected. Click below to simplify the concept.")
-        
-        # Stage 1: Transcription
-        if not st.session_state.concept_transcript:
-            if st.button("Simplify Concept", key="simplify_concept_btn"):
+    elif text_question.strip() and not st.session_state.concept_transcript:
+        st.info("Manual question entered. Click below to simplify the concept.")
+
+    # Stage 1: Transcription / Manual Entry Processing
+    if not st.session_state.concept_transcript:
+        if st.button("Simplify Concept", key="simplify_concept_btn"):
+            query = ""
+            input_type = "voice"
+            
+            # 1. Process voice transcription
+            if active_audio is not None:
                 with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
                         transcript = transcribe_audio(active_audio)
@@ -55,44 +71,66 @@ def render_concept_view():
                             st.session_state.concept_transcript = ""
                             st.session_state.concept_explanation = None
                             st.session_state.concept_audio_bytes = None
+                            st.session_state.concept_input_type = "voice"
                             st.error("🎤 Didn't catch that — please try speaking again")
                             return
                         
-                        st.session_state.concept_transcript = transcript.strip()
-                        st.rerun()
+                        query = transcript.strip()
+                        input_type = "voice"
                     except Exception as e:
                         st.error(get_friendly_error_message(e))
                         return
-
-        # Stage 2: Explanation (automatic trigger after Stage 1)
-        if st.session_state.concept_transcript and not st.session_state.concept_explanation:
-            st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>🎤 Heard: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
-            with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
-                try:
-                    st.session_state.concept_explanation = explain_concept(st.session_state.concept_transcript)
-                    st.rerun()
-                except Exception as e:
-                    st.error(get_friendly_error_message(e))
-                    st.session_state.concept_transcript = ""
+            
+            # 2. Process text input fallback
+            if not query and text_question:
+                stripped_text = text_question.strip()
+                if not stripped_text:
+                    st.warning("Please record your voice or type a question to start.")
                     return
+                query = stripped_text
+                input_type = "manual"
+                
+            # 3. Call generator/validation
+            if query:
+                st.session_state.concept_transcript = query
+                st.session_state.concept_input_type = input_type
+                st.rerun()
+            else:
+                st.warning("Please record your voice or type a question to start.")
 
-        # Stage 3: TTS Synthesis (automatic trigger after Stage 2)
-        if st.session_state.concept_explanation and not st.session_state.concept_audio_bytes:
-            st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>🎤 Heard: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
-            with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
-                try:
-                    explanation_text = st.session_state.concept_explanation.get("explanation", "")
-                    st.session_state.concept_audio_bytes = synthesize_speech(explanation_text)
-                    st.rerun()
-                except Exception as e:
-                    st.error(get_friendly_error_message(e))
-                    # Do not block UI display of card if TTS fails, just flag as empty bytes
-                    st.session_state.concept_audio_bytes = b""
-                    st.rerun()
+    # Stage 2: Explanation (automatic trigger after Stage 1)
+    if st.session_state.concept_transcript and not st.session_state.concept_explanation:
+        icon_wording = "🎤 Heard" if st.session_state.get("concept_input_type", "voice") == "voice" else "✏️ You asked"
+        st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>{icon_wording}: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
+        with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
+            try:
+                st.session_state.concept_explanation = explain_concept(st.session_state.concept_transcript)
+                st.rerun()
+            except Exception as e:
+                st.error(get_friendly_error_message(e))
+                st.session_state.concept_transcript = ""
+                st.session_state.concept_input_type = "voice"
+                return
+
+    # Stage 3: TTS Synthesis (automatic trigger after Stage 2)
+    if st.session_state.concept_explanation and not st.session_state.concept_audio_bytes:
+        icon_wording = "🎤 Heard" if st.session_state.get("concept_input_type", "voice") == "voice" else "✏️ You asked"
+        st.markdown(f"<div style='font-size: 20px; font-weight: bold; color: #1E40AF; margin-bottom: 15px;'>{icon_wording}: '{st.session_state.concept_transcript}'</div>", unsafe_allow_html=True)
+        with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
+            try:
+                explanation_text = st.session_state.concept_explanation.get("explanation", "")
+                st.session_state.concept_audio_bytes = synthesize_speech(explanation_text)
+                st.rerun()
+            except Exception as e:
+                st.error(get_friendly_error_message(e))
+                # Do not block UI display of card if TTS fails, just flag as empty bytes
+                st.session_state.concept_audio_bytes = b""
+                st.rerun()
 
     # Render Transcript immediately
     if st.session_state.concept_transcript:
-        st.markdown("### 🎙️ Detected Transcript:")
+        icon_wording = "🎙️ Detected Transcript" if st.session_state.get("concept_input_type", "voice") == "voice" else "✏️ Your Question"
+        st.markdown(f"### {icon_wording}:")
         st.markdown(
             f'<div style="font-size: 24px; font-weight: bold; background-color: #FFFFFF; color: #1E293B; padding: 20px; border-radius: 8px; border-left: 6px solid #2563EB; border-top: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0; box-shadow: 0 4px 6px rgba(30, 64, 175, 0.05); margin-bottom: 20px;">{st.session_state.concept_transcript}</div>', 
             unsafe_allow_html=True
@@ -159,5 +197,8 @@ def render_concept_view():
             st.session_state.concept_explanation = None
             st.session_state.concept_audio_bytes = None
             st.session_state.last_active_audio = None
+            st.session_state.concept_input_type = "voice"
+            if "concept_text_input" in st.session_state:
+                st.session_state.concept_text_input = ""
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)

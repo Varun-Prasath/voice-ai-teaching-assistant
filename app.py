@@ -114,12 +114,19 @@ st.markdown("""
     }
     
     /* Manual text input (st.text_input) styling */
+    div[data-testid="stTextInput"] div {
+        background-color: transparent !important;
+        background-image: none !important;
+    }
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important;
+        background-image: none !important;
+        background: #FFFFFF !important;
         border: 2px solid #E2E8F0 !important;
         border-radius: 12px !important;
         padding: 4px 8px !important;
         color: #1E293B !important;
+        box-shadow: none !important;
         transition: border-color 0.15s ease-in-out !important;
     }
     div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {

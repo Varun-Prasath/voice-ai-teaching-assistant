@@ -339,4 +339,6 @@ to {{ width: 0%; }}
             st.session_state.quiz_answered = False
             st.session_state.quiz_audio_bytes = None
             st.session_state.quiz_topic = ""
+            if "quiz_text_input" in st.session_state:
+                st.session_state.quiz_text_input = ""
             st.rerun()
