@@ -107,6 +107,18 @@ def render_quiz_view():
 
         active_audio = audio_file if audio_file is not None else uploaded_file
 
+        # Auto-reset state when audio input changes on the launch screen
+        if active_audio != st.session_state.last_active_quiz_audio:
+            st.session_state.quiz_questions = []
+            st.session_state.quiz_score = 0
+            st.session_state.quiz_current_idx = 0
+            st.session_state.quiz_selected_idx = None
+            st.session_state.quiz_answered = False
+            st.session_state.quiz_audio_bytes = None
+            st.session_state.quiz_topic = ""
+            st.session_state.last_active_quiz_audio = active_audio
+            st.rerun()
+
         if st.button("🎯 Generate Quiz", key="generate_quiz_btn"):
             topic = ""
             
@@ -114,10 +126,27 @@ def render_quiz_view():
             if active_audio is not None:
                 with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
-                        topic = transcribe_audio(active_audio)
+                        transcript = transcribe_audio(active_audio)
+                        
+                        # Validate the transcript
+                        if not transcript or not transcript.strip() or transcript.strip() in [".", "...", ",", "?", "!"]:
+                            # Reset/Clear all related states
+                            st.session_state.quiz_questions = []
+                            st.session_state.quiz_active = False
+                            st.session_state.quiz_current_idx = 0
+                            st.session_state.quiz_score = 0
+                            st.session_state.quiz_selected_idx = None
+                            st.session_state.quiz_answered = False
+                            st.session_state.quiz_finished = False
+                            st.session_state.quiz_audio_bytes = None
+                            st.session_state.quiz_topic = ""
+                            st.error("🎤 No speech detected. Please record your question again.")
+                            return
+                        
+                        topic = transcript.strip()
                     except Exception as e:
                         st.error(get_friendly_error_message(e))
-                        topic = ""
+                        return
 
             # 2. Process text input fallback
             if not topic and text_topic:

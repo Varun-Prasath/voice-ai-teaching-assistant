@@ -47,7 +47,18 @@ def render_concept_view():
             if st.button("Simplify Concept", key="simplify_concept_btn"):
                 with st.spinner("🎙️ Listening... thinking... preparing your answer..."):
                     try:
-                        st.session_state.concept_transcript = transcribe_audio(active_audio)
+                        transcript = transcribe_audio(active_audio)
+                        
+                        # Validate the transcript
+                        if not transcript or not transcript.strip() or transcript.strip() in [".", "...", ",", "?", "!"]:
+                            # Reset/Clear all related states to avoid reuse
+                            st.session_state.concept_transcript = ""
+                            st.session_state.concept_explanation = None
+                            st.session_state.concept_audio_bytes = None
+                            st.error("🎤 No speech detected. Please record your question again.")
+                            return
+                        
+                        st.session_state.concept_transcript = transcript.strip()
                         st.rerun()
                     except Exception as e:
                         st.error(get_friendly_error_message(e))
