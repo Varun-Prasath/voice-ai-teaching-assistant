@@ -100,17 +100,32 @@ st.markdown("""
         border-radius: 12px !important;
         padding: 12px !important;
         box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.01) !important;
+        --primary-color: #1E40AF !important;
+        --secondary-color: #2563EB !important;
     }
-    /* Force inner components of st.audio_input to be light theme and readable */
-    div[data-testid="stAudioInput"] div, 
+    /* Force inner components of st.audio_input to be light theme and readable,
+       excluding divs to allow visualizer/waveform placeholder gradients to render properly */
     div[data-testid="stAudioInput"] span,
     div[data-testid="stAudioInput"] p,
     div[data-testid="stAudioInput"] button {
-        background-color: #FFFFFF !important;
+        background-color: transparent !important;
         color: #1E293B !important;
+    }
+    /* Ensure action button icons are clearly visible in theme blue */
+    div[data-testid="stAudioInput"] button {
+        color: #1E40AF !important;
+    }
+    div[data-testid="stAudioInput"] button svg {
+        color: #1E40AF !important;
+        fill: currentColor !important;
     }
     div[data-testid="stAudioInput"] label {
         display: none !important;
+    }
+    /* Style the placeholder dots visualizer in theme blue */
+    div[data-testid="stAudioInput"] div:not([data-testid]) div:not([data-testid]) div:not([data-testid]) {
+        background: radial-gradient(#1E40AF 2px, transparent 0) !important;
+        background-size: 24px 24px !important;
     }
     
     /* Manual text input (st.text_input) styling */
