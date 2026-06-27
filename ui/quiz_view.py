@@ -102,7 +102,7 @@ def render_quiz_view():
         # Fallback File Uploader Expander
         st.markdown('<div style="margin-top: 5px; margin-bottom: 25px;">', unsafe_allow_html=True)
         with st.expander("📁 Fallback: Upload a voice command audio file instead", key="quiz_fallback_expander"):
-            uploaded_file = st.file_uploader("Upload wav/mp3/m4a audio file", type=["wav", "mp3", "m4a"], key="quiz_file_upload")
+            uploaded_file = st.file_uploader("Upload audio file", type=["wav", "mp3", "m4a", "mp4", "mpeg", "mpga"], key="quiz_file_upload")
         st.markdown('</div>', unsafe_allow_html=True)
 
         active_audio = audio_file if audio_file is not None else uploaded_file

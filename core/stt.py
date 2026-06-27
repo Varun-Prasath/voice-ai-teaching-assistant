@@ -113,7 +113,8 @@ def transcribe_audio(audio_file) -> str:
             raise RuntimeError(f"Groq Whisper transcription failed: {str(e)}")
     # Perform validation on raw_transcript
     if not raw_transcript or not raw_transcript.strip() or len(raw_transcript.strip()) < 2:
-        print(f"DEBUG STT Filter: Rejected short/empty transcript '{raw_transcript}'")
+        safe_t = raw_transcript.encode('ascii', errors='backslashreplace').decode('ascii')
+        print(f"DEBUG STT Filter: Rejected short/empty transcript '{safe_t}'")
         return ""
         
     normalized = raw_transcript.strip().lower().rstrip(".?!,")
@@ -125,7 +126,8 @@ def transcribe_audio(audio_file) -> str:
     }
     
     if normalized in hallucination_denylist:
-        print(f"DEBUG STT Filter: Rejected hallucination transcript '{raw_transcript}'")
+        safe_t = raw_transcript.encode('ascii', errors='backslashreplace').decode('ascii')
+        print(f"DEBUG STT Filter: Rejected hallucination transcript '{safe_t}'")
         return ""
         
     # Check for repeating word patterns
@@ -133,7 +135,8 @@ def transcribe_audio(audio_file) -> str:
     if len(words) >= 3:
         unique_words = set(w.lower().rstrip(".?!,") for w in words)
         if len(unique_words) <= 2 and (len(words) / len(unique_words)) >= 3:
-            print(f"DEBUG STT Filter: Rejected repeating word pattern transcript '{raw_transcript}'")
+            safe_t = raw_transcript.encode('ascii', errors='backslashreplace').decode('ascii')
+            print(f"DEBUG STT Filter: Rejected repeating word pattern transcript '{safe_t}'")
             return ""
 
     return raw_transcript
