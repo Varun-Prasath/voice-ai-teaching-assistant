@@ -21,9 +21,7 @@ def _get_api_key(key_name: str) -> str:
 
 def transcribe_audio(audio_file) -> str:
     """
-    Transcribes audio to text in a provider-agnostic manner.
-    Prioritizes Groq Whisper (whisper-large-v3-turbo) if GROQ_API_KEY is present,
-    falls back to OpenAI Whisper (whisper-1) if OPENAI_API_KEY is present.
+    Transcribes audio to text using Groq Whisper (whisper-large-v3-turbo).
     
     Args:
         audio_file: Either a file path string, an UploadedFile-like object, or bytes.
@@ -32,11 +30,10 @@ def transcribe_audio(audio_file) -> str:
         str: The transcribed text.
     """
     groq_key = _get_api_key("GROQ_API_KEY")
-    openai_key = _get_api_key("OPENAI_API_KEY")
     
-    if not groq_key and not openai_key:
+    if not groq_key:
         raise ValueError(
-            "API Key missing! Please set GROQ_API_KEY or OPENAI_API_KEY "
+            "API Key missing! Please set GROQ_API_KEY "
             "in your environment variables or Streamlit secrets."
         )
 
@@ -114,21 +111,6 @@ def transcribe_audio(audio_file) -> str:
             raw_transcript = response.text
         except Exception as e:
             raise RuntimeError(f"Groq Whisper transcription failed: {str(e)}")
-            
-    elif openai_key:
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=openai_key)
-            response = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=(file_name, file_bytes),
-                language="hi",
-                prompt="Hinglish, Hindi-English code-switching: 'आज हम cell structure padhenge.'"
-            )
-            raw_transcript = response.text
-        except Exception as e:
-            raise RuntimeError(f"OpenAI Whisper transcription failed: {str(e)}")
-            
     # Perform validation on raw_transcript
     if not raw_transcript or not raw_transcript.strip() or len(raw_transcript.strip()) < 2:
         print(f"DEBUG STT Filter: Rejected short/empty transcript '{raw_transcript}'")
