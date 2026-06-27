@@ -329,16 +329,19 @@ to {{ width: 0%; }}
         )
         st.markdown(html_content, unsafe_allow_html=True)
 
-        if st.button("🔄 New Quiz", key="reset_quiz_btn"):
-            st.session_state.quiz_active = False
-            st.session_state.quiz_finished = False
-            st.session_state.quiz_questions = []
-            st.session_state.quiz_score = 0
-            st.session_state.quiz_current_idx = 0
-            st.session_state.quiz_selected_idx = None
-            st.session_state.quiz_answered = False
-            st.session_state.quiz_audio_bytes = None
-            st.session_state.quiz_topic = ""
-            if "quiz_text_input" in st.session_state:
-                st.session_state.quiz_text_input = ""
-            st.rerun()
+    def reset_quiz_flow():
+        st.session_state.quiz_active = False
+        st.session_state.quiz_finished = False
+        st.session_state.quiz_questions = []
+        st.session_state.quiz_score = 0
+        st.session_state.quiz_current_idx = 0
+        st.session_state.quiz_selected_idx = None
+        st.session_state.quiz_answered = False
+        st.session_state.quiz_audio_bytes = None
+        st.session_state.quiz_topic = ""
+        st.session_state.last_active_quiz_audio = None
+        for key in ["quiz_text_input", "quiz_mic_input", "quiz_file_upload"]:
+            if key in st.session_state:
+                del st.session_state[key]
+
+    st.button("🔄 New Quiz", key="reset_quiz_btn", on_click=reset_quiz_flow)

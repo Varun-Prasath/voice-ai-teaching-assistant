@@ -190,15 +190,17 @@ def render_concept_view():
                 </div>
                 """, unsafe_allow_html=True)
 
-        # Reset action button
-        st.markdown('<div style="margin-top: 25px; margin-bottom: 25px;">', unsafe_allow_html=True)
-        if st.button("🔄 Ask Another Question", key="reset_concept_btn"):
-            st.session_state.concept_transcript = ""
-            st.session_state.concept_explanation = None
-            st.session_state.concept_audio_bytes = None
-            st.session_state.last_active_audio = None
-            st.session_state.concept_input_type = "voice"
-            if "concept_text_input" in st.session_state:
-                st.session_state.concept_text_input = ""
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    def reset_concept_flow():
+        st.session_state.concept_transcript = ""
+        st.session_state.concept_explanation = None
+        st.session_state.concept_audio_bytes = None
+        st.session_state.last_active_audio = None
+        st.session_state.concept_input_type = "voice"
+        for key in ["concept_text_input", "concept_mic_input", "concept_file_upload"]:
+            if key in st.session_state:
+                del st.session_state[key]
+
+    # Reset action button
+    st.markdown('<div style="margin-top: 25px; margin-bottom: 25px;">', unsafe_allow_html=True)
+    st.button("🔄 Ask Another Question", key="reset_concept_btn", on_click=reset_concept_flow)
+    st.markdown('</div>', unsafe_allow_html=True)
