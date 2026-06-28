@@ -116,7 +116,7 @@ For Streamlit Community Cloud deployment, add the same two keys under **App sett
 
 ## 🎥 Demo Video
 
-[Link to 3-minute walkthrough video]
+[Watch the 3-minute demo](https://drive.google.com/file/d/1Os0xvZgc1v-Uf-T1-0J2D9IbyVBkG5VD/view?usp=sharing)
 
 ---
 
