@@ -102,6 +102,7 @@ streamlit run app.py
 
 For Streamlit Community Cloud deployment, add the same two keys under **App settings → Secrets** instead of `.env`.
 
+> 🎤 **Don't have a mic handy?** Try `Topic_Exp_1.mpeg` or `Quiz_Sample_Audio.mpeg` through the "Upload an audio file instead" fallback on either tab to test the app without recording your own voice.
 ---
 
 ## ⚠️ Known Limitations
